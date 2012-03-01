@@ -1,0 +1,6 @@
+name = ESI - Edge Side Includes
+description = "Allow Drupal components to be delivered via ESI (Edge-Side Includes).  Requires an ESI-capable proxy."
+package = Caching
+recommends[] = varnish
+
+core = 7.x

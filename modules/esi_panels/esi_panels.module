@@ -1,0 +1,39 @@
+<?php
+/**
+ * @file
+ * ESI handler for panel panes.
+ */
+
+// Tested against 1.7.2.
+define('ESI_PANELS_REQUIRED_CTOOLS_API', '1.7.2');
+
+/**
+ * Implements hook_esi_component().
+ *
+ * @see esi_block_prepare()
+ * @see esi_block_render()
+ */
+function esi_panels_esi_component_info() {
+  return array(
+    'pane' => array(
+      'preprocess' => 'esi_panels__esi_pane_prepare',
+      'render'     => 'esi_panels__esi_pane_render',
+      'flush'      => 'esi_panels__esi_pane_flush',
+      'file'       => 'esi_panels.esi.inc',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function esi_ctools_plugin_directory($module, $plugin) {
+  // Safety: go away if CTools is not at an appropriate version.
+  if (!module_invoke('ctools', 'api_version', ESI_PANELS_REQUIRED_CTOOLS_API)) {
+    return;
+  }
+
+  if ($module == 'page_manager' || $module == 'panels' || $module == 'ctools') {
+    return 'plugins/' . $plugin;
+  }
+}

@@ -1,0 +1,139 @@
+<?php
+/**
+ * @file
+ *   Adds support for ESI (Edge-Side-Include) integration, allowing components\
+ *   to be delivered by ESI, with support for per-component cache times.
+ */
+
+// Default TTL for all components served by ESI is 5 minutes.
+define('ESI_DEFAULT_TTL', 300);
+
+/**
+ * Implements hook_flush_caches().
+ */
+function esi_flush_caches() {
+  // No cache-tables to report.
+  // @TODO: Instruct expire to flush URLs if configured to do so.
+
+}
+
+/**
+ * Implements hook_menu().
+ */
+function esi_menu() {
+  $items = array();
+
+  // An ESI component must be provided with all the parameters required to
+  // reconstruct the required context.
+  $items['esi/%esi_component'] = array(
+    'page callback' => 'esi_handle_component',
+    'page arguments' => array(1),
+    // @TODO: allow menu-handler to be locked down, for example controlling
+    // access by a HTTP header sent by the proxy.
+    'access callback' => TRUE,
+    'delivery callback' => 'esi_deliver_esi_component',
+    'type' => MENU_CALLBACK,
+    'file' => 'esi.pages.inc',
+  );
+
+  // Add a high-level menu entry for admin_menu/flush-cache/esi.
+  // This allows the ESI module to integrate with the admin_menu module and
+  // provide a link to clear ESI caches.
+  $items['admin_menu/flush-cache/esi'] = array(
+    'page callback' => 'esi_admin_menu_flush_cache',
+    'access arguments' => array('flush caches'),
+    'type' => MENU_CALLBACK,
+    'file' => 'esi.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_menu_output_alter().
+ *
+ * Integrate with admin_menu to add a cache flush for ESI.
+ */
+function esi_admin_menu_output_alter(&$admin_menu) {
+  // Add an entry for resetting the ESI caches.
+  $destination = drupal_get_destination();
+  if ($admin_menu['icon'] && isset($admin_menu['icon']['icon']['flush-cache']) && is_array($admin_menu['icon']['icon']['flush-cache'])) {
+    $admin_menu['icon']['icon']['flush-cache']['esi'] = array(
+      '#title' => t('Edge-side Includes'),
+      '#href' => 'admin_menu/flush-cache/esi',
+      '#options' => array(
+        'query' => $destination,
+      ),
+    );
+  }
+  ksort($admin_menu['icon']['icon']['flush-cache']);
+}
+
+/**
+ * Menu-wildcard loader for %esi_component.
+ */
+function esi_component_load($component) {
+  $components = esi_get_components();
+  return array_key_exists($component, $components) ? $components[$component] : FALSE;
+}
+
+/**
+ * List all the modules which implement hook_esi_component_info().
+ */
+function esi_get_components() {
+  if ($result = cache_get('esi_component_info')) {
+    return $result->data;
+  }
+  else {
+    $components = array();
+    // Invoke hook_esi_component_info().
+    foreach (module_implements('esi_component_info') as $module) {
+      foreach (module_invoke($module, 'esi_component_info') as $key => $component) {
+        // Modules may specify an include file.
+        // Provide a default include path (if the module doesn't provide one).
+        if (!empty($component['file']) && empty($component['filepath'])) {
+          $component['filepath'] = drupal_get_path('module', $module);
+        }
+
+        // Use the key supplied by the module, rather than the module name.
+        // This allows modules to override other implementations if required.
+        $components[$key] = $component;
+      }
+    }
+    drupal_alter('esi_component_info', $esi_component_info);
+    cache_set('esi_component_info', $components);
+    return $components;
+  }
+}
+
+
+/**
+ * Get a list of possible max age (ttl) choices.
+ *
+ * @param optional Int $current_max_age
+ * The defined max age might not amongst the pre-defined options.  Adding the
+ * current max age as a parameter allows it to be added to the list of options,
+ * ensuring the current configuration doesn't get overridden.
+ *
+ * @return Array
+ * Array of potential max-age choices. The key is the TTL (in seconds) and the
+ * value is the human-readable description of that TTL.
+ */
+function esi_max_age_options($current_max_age = NULL) {
+  if (is_null($current_max_age)) {
+    $current_max_age = variable_get('esi_block_default_ttl', ESI_DEFAULT_TTL);
+  }
+
+  $options = drupal_map_assoc(
+    array(0, 5, 15, 30, 60, 120, 180, 240, 300, 600, 900, 1200, 1800, 3600, 7200, 14400, 28800, 43200, 64800, 86400, 86400*2, 86400*3, 86400*4, 86400*5, 86400*6, 86400*7),
+    'format_interval');
+
+  // If the given max age isn't one of our options, add the current max age as a custom option.
+  if (!isset($options[$current_max_age])) {
+    $options[$current_max_age] = t('Custom: @time', array('@time' => format_interval($current_max_age)));
+    ksort($options);
+  }
+  $options[0] = '<' . t('none') . '>';
+
+  return $options;
+}

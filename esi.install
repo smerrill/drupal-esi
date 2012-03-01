@@ -1,0 +1,18 @@
+<?php
+/**
+ * File
+ * Update hooks for the ESI module.
+ */
+
+/**
+ * Implements hook_update_n().
+ */
+function esi_update_7001() {
+  // The variable 'esi_block_default_max_age' has been renamed to
+  // 'esi_block_default_ttl'.
+  $ttl = variable_get('esi_block_default_max_age', FALSE);
+  if (is_numeric($ttl) || $ttl === 0) {
+    variable_set('esi_block_default_ttl', $ttl);
+    variable_del('esi_block_default_max_age');
+  }
+}

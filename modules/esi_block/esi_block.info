@@ -1,0 +1,7 @@
+name = ESI - Block
+description = "Deliver Drupal blocks via ESI."
+core = 7.x
+package = Caching
+dependencies[] = block
+dependencies[] = esi
+

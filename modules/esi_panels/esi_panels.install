@@ -1,0 +1,5 @@
+<?php
+/**
+ * @file
+ * Install/Uninstall/Schema hooks for ESI Panels.
+ */
