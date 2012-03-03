@@ -2,6 +2,16 @@
 /**
  * @file
  * ESI handler for blocks.
+ *
+ * Architectural philosophy:
+ * - Remove the existing block as early as possible, to avoid building the
+ *   contents of the block, only to throw them away.  This happens with
+ *   hook_block_list_alter().
+ * - Use the block's existing cache settings (DRUPAL_CACHE_PER_PAGE, etc) to
+ *   govern how the ESI URL is constructed, and the cache headers provided when
+ *   the ESI fragment is delivered.
+ * - Provide *no* theme furniture around the ESI tag. Ensure that the relevant
+ *   theme furniture is invoked to be delivered with the ESI fragment.
  */
 
 /**

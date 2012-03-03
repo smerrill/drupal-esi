@@ -3,8 +3,39 @@
  * @file
  *   Adds support for ESI (Edge-Side-Include) integration, allowing components\
  *   to be delivered by ESI, with support for per-component cache times.
+ *
+ * Architectural philosophy:
+ * - The ESI module provides a base API, but does not serve ESIs by itself.
+ * - Each ESI component (a block, a panel pane, etc) will require different
+ *   approaches for:
+ *   a) removing the original content from the page delivery.
+ *   b) replacing the content with an ESI tag.
+ *   c) dictating the level of context required to rebuild the original
+ *      component when delivering an ESI fragment.
+ *   d) constructing an ESI URL which contains all the required context
+ *      information.
+ *   Therefore, each ESI component will typically be a module by itself.
+ *   Separating components into individual modules will also help performance:
+ *   for example, sites which don't use panels will not be required to load
+ *   hooks and handlers for ESI-panels integration.
+ * - Each ESI component will have a menu path in the format:
+ *   /esi/{$esi_component_name}/any/context/information/required
+ * - ESI fragments will be delivered using a minimalist delivery method -
+ *   drupal_deliver_html_page() is not required or used; it is replaced by
+ *   esi_deliver_esi_component().
+ * - ESI's primary use-case is integration with Varnish, so the module is
+ *   optimised and primarily tested against Varnish (Varnish versions 2.x and
+ *   3.x).
+ * - Some components - for example, blocks - may vary according to user-roles.
+ *   Caching those fragments separately could unnecessarily increase the size
+ *   of cache needed, because the user's session cookie doesn't provide role
+ *   information to a proxy.  ESI provides a role cookie (and has an API to
+ *   provide any arbitrary context cookie) to allow proxies more-granular
+ *   control over fragment-cacheing. This will almost-certainly require custom
+ *   configuration of the proxy (the example VCLs demonstrate this for Varnish)
+ *   and some proxies may not have this capability, so will typically have a
+ *   lower cache-hit rate and may require a larger cache size to compensate.
  */
-
 // Default TTL for all components served by ESI is 5 minutes.
 define('ESI_DEFAULT_TTL', 300);
 
