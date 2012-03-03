@@ -36,6 +36,7 @@
  *   and some proxies may not have this capability, so will typically have a
  *   lower cache-hit rate and may require a larger cache size to compensate.
  */
+
 // Default TTL for all components served by ESI is 5 minutes.
 define('ESI_DEFAULT_TTL', 300);
 
