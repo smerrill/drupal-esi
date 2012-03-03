@@ -106,7 +106,11 @@ function esi_admin_menu_output_alter(&$admin_menu) {
  */
 function esi_component_load($component) {
   $components = esi_get_components();
-  return array_key_exists($component, $components) ? $components[$component] : FALSE;
+  // Do not return FALSE: even if the requested component is not valid, allow
+  // the menu handler to return control to esi_handle_component() in order to
+  // return a custom ESI 404.  Having an entire theme Drupal 404 page embedded
+  // within another Drupal page would not be desirable.
+  return array_key_exists($component, $components) ? $components[$component] : NULL;
 }
 
 /**

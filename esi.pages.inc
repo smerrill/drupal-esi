@@ -6,8 +6,16 @@
 
 /**
  * Menu callback to handle an ESI component.
+ *
+ * @see esi_component_load().
  */
 function esi_handle_component($component) {
+  // The menu wildcard loader will return NULL for invalid components, so that
+  // the menu-handler will delegate 404 delivery here.
+  if (empty($component)) {
+    esi_fast_404();
+  }
+
   // Remove the component from the arguments.
   $args = array_slice(func_get_args(),1);
 
@@ -62,4 +70,25 @@ function esi_deliver_esi_component($esi_rendered_component) {
   // Even though it's just an ESI component, invoke in case there's any session
   // activity to commit.
   drupal_page_footer();
+}
+
+/**
+ * Generate a fast 404 (consisting of a single HTML comment).
+ * Full delivery is not desired, because it would typically result in embedding
+ * a complete, themed Drupal 404 page *within* another page.
+ *
+ * @see drupal_fast_404()
+ */
+function esi_fast_404() {
+  drupal_add_http_header('Status', '404 Not Found');
+  drupal_add_http_header('X-ESI', 'Component not recognised');
+  watchdog('page not found', check_plain($_GET['q']), NULL, WATCHDOG_WARNING);
+
+  // Unlike drupal_fast_404(), the HTML furniture (html tag, head tag, etc) are
+  // not delivered 
+  echo "<!-- esi_fast_404 -->\n";
+
+  // Unlike normal page-views, invoking hook_exit() is unneccessary overhead.
+  // This use of exit matches the behaviour of drupal_fast_404().
+  exit;
 }
