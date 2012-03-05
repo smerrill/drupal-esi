@@ -3,5 +3,6 @@ description = "Deliver panel-panes via ESI."
 core = 7.x
 package = Caching
 dependencies[] = panels
+dependencies[] = page_manager
 dependencies[] = esi
 
