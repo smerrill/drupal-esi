@@ -157,7 +157,7 @@ function esi_get_components() {
  */
 function esi_max_age_options($current_max_age = NULL) {
   if (is_null($current_max_age)) {
-    $current_max_age = variable_get('esi_block_default_ttl', ESI_DEFAULT_TTL);
+    $current_max_age = variable_get('esi_default_ttl', ESI_DEFAULT_TTL);
   }
 
   $options = drupal_map_assoc(

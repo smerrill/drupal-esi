@@ -3,3 +3,12 @@
  * @file
  * Install/Uninstall/Schema hooks for ESI Panels.
  */
+
+/**
+ * Implements hook_uninstall().
+ */
+function esi_block_uninstall() {
+  // Remove obsolete variables.
+  variable_del('esi_panels_esi_default_ttl');
+}
+

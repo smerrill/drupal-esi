@@ -46,6 +46,8 @@ function esi_block_install() {
       // trickier...Is "esi_block_foo_bar" "esi":"block_foo_bar" or
       // "esi_block":"foo_bar"? Hard to say!
 
+      // Remove the old variable once it's migrated.
+      variable_del('esi_block_config');
     }
   }
 }
@@ -54,9 +56,13 @@ function esi_block_install() {
  * Implements hook_uninstall().
  */
 function esi_block_uninstall() {
+  // Remove the columns that were added to the 'block' table in hook_install().
   $schema = esi_block_schema_alter();
   foreach($schema['block']['fields'] as $field_name => $spec) {
     db_drop_field('block', $field_name);
   }
+
+  // Remove obsolete variables.
+  variable_del('esi_block_default_ttl');
 }
 
