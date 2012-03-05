@@ -166,10 +166,10 @@ function esi_max_age_options($current_max_age = NULL) {
 
   // If the given max age isn't one of our options, add the current max age as a custom option.
   if (!isset($options[$current_max_age])) {
-    $options[$current_max_age] = t('Custom: @time', array('@time' => format_interval($current_max_age)));
+    $options[$current_max_age] = t('Custom: @time', array('@time' => format_interval($current_max_age)), array('context' => 'Cache Duration'));
     ksort($options);
   }
-  $options[0] = '<' . t('none') . '>';
+  $options[0] = '<' . t('none', array(), array('context' => 'Cache Duration')) . '>';
 
   return $options;
 }
