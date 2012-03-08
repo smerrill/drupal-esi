@@ -25,9 +25,11 @@ function esi_panels__esi_pane_prepare($component_key) {
   $display = panels_load_display($did);
   $pane = $display->content[$pid];
 
-  $pane->esi_meta = array();
+  $pane->esi_meta = array(
+    'display_contexts' => array(),
+  );
 
-  if ($pane->configuration['context']) {
+  if (!empty($pane->configuration['context'])) {
     $task_name = array_shift($args);
     list($task, $subtask) = _esi_panels__get_task_identifier($task_name);
 
@@ -57,7 +59,7 @@ function esi_panels__restore_context(&$pane) {
   $theme = $pane->esi_meta['theme'];
 
   // Load up contexts. Owch.
-  if ($pane->configuration['context']) {
+  if (!empty($pane->configuration['context'])) {
     ctools_include('context');
     ctools_include('context-task-handler');
 
@@ -118,7 +120,7 @@ function esi_panels__esi_pane_render($pane) {
 
   foreach (module_implements('panels_pane_content_alter') as $module) {
     $function = $module . '_panels_pane_content_alter';
-    $function($content, $pane, $this->display->args, $this->display->context);
+    $function($content, $pane, $pane->esi_meta['display_args'], $pane->esi_meta['display_contexts']);
   }
 
   // Pass long the css_id that is usually available.
