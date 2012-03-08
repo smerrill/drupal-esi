@@ -129,6 +129,8 @@ function esi_panels__esi_pane_render($pane) {
     $function($content, $pane, $pane->esi_meta['display_args'], $pane->esi_meta['display_contexts']);
   }
 
+  esi_panels_set_http_headers($pane);
+
   // Pass long the css_id that is usually available.
   if (!empty($pane->css['css_id'])) {
     $content->css_id = check_plain($pane->css['css_id']);
@@ -158,6 +160,23 @@ function esi_panels__esi_pane_render($pane) {
   }
 }
 
+/**
+ * Set HTTP headers to control caching of ESI fragments.
+ */
+function esi_panels_set_http_headers($pane) {
+  $ttl = $pane->cache['settings']['esi_ttl'];
+
+  $headers = array();
+  $headers[] = array('Cache-Control', "private, max-age=$ttl");
+
+  // Allow other modules to alter the headers.
+  // @see hook_esi_block_cache_headers_alter().
+  drupal_alter('esi_panels_cache_headers', $headers);
+
+  foreach($headers as $header) {
+    drupal_add_http_header($header[0], $header[1]);
+  }
+}
 
 /**
  * Flush the ESI block caches.
