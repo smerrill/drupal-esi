@@ -20,6 +20,8 @@ function esi_panels__esi_pane_prepare($component_key) {
   // Check for optional args.
   $args = array_slice(func_get_args(), 1);
 
+  $url = array_pop($args);
+
   // Task-name and context identifier are next in the URL, if context is used
   // by the pane.
   $display = panels_load_display($did);
@@ -41,6 +43,7 @@ function esi_panels__esi_pane_prepare($component_key) {
     'display' => $display,
     'theme' => $theme,
     'display_args' => $args,
+    'url' => base64_decode($url),
   );
 
   esi_panels__restore_context($pane);
@@ -57,6 +60,9 @@ function esi_panels__restore_context(&$pane) {
   // Restore the theme.
   global $theme;
   $theme = $pane->esi_meta['theme'];
+
+  $_GET['q'] = $pane->esi_meta['url'];
+  drupal_static_reset('drupal_get_destination');
 
   // Load up contexts. Owch.
   if (!empty($pane->configuration['context'])) {

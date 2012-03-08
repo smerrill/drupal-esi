@@ -194,6 +194,9 @@ function esi_panels_url($pane, $display) {
   // Add all the display arguments to the end of the URL.
   $url .= '/' . implode('/', $display->args);
 
+  // Always add the current page URL.
+  $url .= '/' . base64_encode($_GET['q']);
+
   // Allow other modules to alter the ESI URL (or respond to it).
   // @see hook_esi_block_url_alter().
   drupal_alter('esi_panels_url', $url);
