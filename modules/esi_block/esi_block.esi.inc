@@ -57,6 +57,7 @@ function esi_block__restore_context($block) {
   // Restore the page context.
   if (!empty($block->esi_page_context)) {
     $_GET['q'] = $block->esi_page_context;
+    drupal_static_reset('drupal_get_destination');
   }
 }
 
