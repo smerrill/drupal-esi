@@ -9,6 +9,10 @@
  */
 function esi_uninstall() {
   variable_del('esi_default_ttl');
+  variable_del('esi_seed_key');
+  variable_del('esi_seed_key_last_changed');
+  variable_del('esi_seed_key_rotation_interval');
+  variable_del('esi_harden_cookie_key');
 }
 
 /**

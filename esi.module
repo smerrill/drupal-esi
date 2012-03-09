@@ -35,10 +35,18 @@
  *   configuration of the proxy (the example VCLs demonstrate this for Varnish)
  *   and some proxies may not have this capability, so will typically have a
  *   lower cache-hit rate and may require a larger cache size to compensate.
+ * - Components typically vary by user, role, and page. Of these, page context
+ *   is usually provided in the ESI URL, users will already have a SESS cookie,
+ *   but roles do not expose context to external proxies. Core ESI module
+ *   provides a role cookie (via an API) to provide role context.
+ *   Contexts can be GET/SET/ROTATED.
  */
 
 // Default TTL for all components served by ESI is 5 minutes.
 define('ESI_DEFAULT_TTL', 300);
+
+// Default interval for rotating the seed key: change each day by default.
+define('ESI_SEED_ROTATION_INTERVAL', 86400);
 
 /**
  * Implements hook_flush_caches().
@@ -47,6 +55,38 @@ function esi_flush_caches() {
   // No cache-tables to report.
   // @TODO: Instruct expire to flush URLs if configured to do so.
 
+}
+
+/**
+ * Implements hook_boot().
+ */
+function esi_boot() {
+  // Set context cookies if not set and user is logged in.
+  global $user;
+
+  $sessify = variable_get('esi_harden_cookie_key', TRUE);
+  $session_name = $sessify ? session_name() : '';
+
+  // Expect *at least* an "ESI_{$session_name}" cookie.
+  // Use this as the basis for refreshing context cookies.
+  if ($user->uid && empty($_COOKIE["ESI_{$session_name}"])) {
+    // No ESI cookie? REFRESH ALL THE ESI COOKIES!
+    esi__set_user_contexts($user);
+  }
+}
+
+/**
+ * Implementation of hook_cron().
+ * Every interval, rotate the seed (used to generate the context-cookies).
+ * (Each rotation will invalidate the varnish-cache for previously-cached
+ * contexts).
+ */
+function esi_cron() {
+  $age_of_current_seed = time() - variable_get('esi_seed_key_last_changed', 0);
+  $interval = variable_get('esi_seed_key_rotation_interval', ESI_SEED_ROTATION_INTERVAL);
+  if ($age_of_current_seed > $interval) {
+    _esi__rotate_seed_key();
+  }
 }
 
 /**
@@ -114,6 +154,26 @@ function esi_component_load($component) {
 }
 
 /**
+ * Implements hook_user_login().
+ */
+function esi_user_login(&$edit, $account) {
+  esi__set_user_contexts($account);
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function esi_user_logout($account) {
+  // Remove all the cookies that have been created.
+  $cookie_data = esi__get_cookie_data($account);
+
+  // Transmit the cookies.
+  foreach ($cookie_data as $cookie) {
+    setcookie($cookie['name'], 'removed', 1, $cookie['path'], $cookie['domain'], $cookie['secure'], $cookie['httponly']);
+  }
+}
+
+/**
  * List all the modules which implement hook_esi_component_info().
  */
 function esi_get_components() {
@@ -141,7 +201,6 @@ function esi_get_components() {
     return $components;
   }
 }
-
 
 /**
  * Get a list of possible max age (ttl) choices.
@@ -172,4 +231,130 @@ function esi_max_age_options($current_max_age = NULL) {
   $options[0] = '<' . t('none', array(), array('context' => 'Cache Duration')) . '>';
 
   return $options;
+}
+
+/**
+ * Set the cookies to track current ESI contexts.
+ */
+function esi__set_user_contexts($account) {
+  $cookie_data = esi__get_cookie_data($account);
+
+  // Transmit the cookies.
+  foreach ($cookie_data as $cookie) {
+    setcookie($cookie['name'], $cookie['value'], $cookie['expire'], $cookie['path'], $cookie['domain'], $cookie['secure'], $cookie['httponly']);
+  }
+}
+
+/**
+ * Get all the relevant cookie data for an account.
+ */
+function esi__get_cookie_data($account) {
+  $cookie_data = array();
+
+  // Allow other modules to generate context for this user.
+  $contexts = esi__get_user_contexts($account);
+  $params = session_get_cookie_params();
+  foreach ($contexts as $key => $context) {
+    // Each context has the session key appended to it, to ensure site-
+    // specifity.
+    $expire = $params['lifetime'] ? REQUEST_TIME + $params['lifetime'] : 0;
+    $cookie_data[] = array(
+      'name'     => $key,
+      'value'    => $context,
+      'expire'   => $expire,
+      'path'     => $params['path'],
+      'domain'   => $params['domain'],
+      'secure'   => $params['secure'],
+      'httponly' => $params['httponly'],
+    );
+  }
+
+  // Allow other modules to alter the contexts.
+  // This is where the context gets encrypted against the rotating seed.
+  drupal_alter('esi_context_cookies', $cookie_data);
+
+  // The default user-session cookie uses the session_name.
+  // Append the session-name to all ESI cookies (if desired).
+  $sessify = variable_get('esi_harden_cookie_key', TRUE);
+  $session_name = $sessify ? session_name() : '';
+
+  // Add a *consistent* cookie, so that hook_boot() can determine if a cache-
+  // refresh is necessary.
+  $cookie_data['ESI_' . $session_name] = time();
+
+  foreach ($cookie_data as $cookie) {
+    $cookie['name'] .= $session_name;
+  }
+
+  return $cookie_data;
+}
+
+/**
+ * Get the ESI contexts for a single user.
+ */
+function esi__get_user_contexts($account = NULL) {
+  // Invoke hook_esi_context().
+  $contexts = module_invoke_all('esi_context', $account);
+  drupal_alter('esi_context', $contexts, $account);
+  return $contexts;
+}
+
+/**
+ * Implements hook_esi_context().
+ */
+function esi_esi_context($account) {
+  // Add a role context.
+  global $user;
+  return array(
+    'R' => implode(',', array_keys($user->roles)),
+  );
+}
+
+/**
+ * Implements hook_esi_context_cookies_alter().
+ */
+function esi_esi_context_cookies_alter(&$cookie_data) {
+  $seed = _esi__get_seed();
+
+  // Encrypt each value according to the current seed key.
+  foreach ($cookie_data as &$cookie) {
+    $cookie['value'] = md5($seed . md5($cookie['value']));
+  }
+}
+
+/**
+ * Get the current short-term rotating-seed, which provides the security that
+ * users with expired credentials have limited access to secured data.
+ *
+ * @return String
+ * The new 32-character seed key.
+ */
+function _esi__get_seed() {
+  // Attempt to load the current seed key.
+  $seed = variable_get('esi_seed_key', FALSE);
+
+  // If the seed hasn't yet been set, or is too old, rotate the key.
+  $age = variable_get('esi_seed_key_last_changed', 0);
+  if (empty($seed) || $age < variable_get('esi_seed_key_rotation_interval', ESI_SEED_ROTATION_INTERVAL)) {
+    $seed = _esi__rotate_seed_key();
+  }
+  return $seed;
+}
+
+
+/**
+ * Rotate the seed key.
+ *
+ * @return String
+ * The new 32-character seed key.
+ */
+function _esi__rotate_seed_key() {
+  $seed = '';
+  for ($i=0; $i<32; $i++) {
+    // get a random character from the printable ASCII character set: 32-176
+    $seed += chr(mt_rand(32, 176));
+  }
+  variable_set('esi_seed_key', $seed);
+  variable_set('esi_seed_key_last_changed', time());
+  return $seed;
 }
