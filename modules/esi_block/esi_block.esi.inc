@@ -141,7 +141,7 @@ function esi_block_set_http_headers($block) {
     $headers[] = array('X-BLOCK-CACHE', ($block->cache & DRUPAL_CACHE_PER_USER ? 'USER' : 'ROLE'));
   }
   else {
-    $headers[] = array('Cache-Control', "$public, max-age=$ttl");
+    $headers[] = array('Cache-Control', "public, max-age=$ttl");
   }
 
   // Allow other modules to alter the headers.
