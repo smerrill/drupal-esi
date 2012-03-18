@@ -438,7 +438,6 @@ function esi_esi_context_cookies_alter(&$cookie_data) {
  */
 function esi_esi_tag($url) {
   return '<esi:include src="' . $url . '" />';
-  drupal_set_message('rendering ESI: ' . $url);
 }
 
 /**
@@ -446,7 +445,6 @@ function esi_esi_tag($url) {
  */
 function esi_ssi_tag($url) {
   return '<!--# include virtual="' . $url . '" -->';
-  drupal_set_message('rendering SSI: ' . $url);
 }
 
 
