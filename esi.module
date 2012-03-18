@@ -64,6 +64,10 @@ function esi_boot() {
   // Set context cookies if not set and user is logged in.
   global $user;
 
+  // ESI will *always* set a cookie in order to determine if cookies need to be
+  // resent. That cookie's name will be:
+  // ESI_:                   if the "Harden cookie key" setting is disabled.
+  // ESI_{32-char-MD5-hash}: if the "Harden cookie key" setting is enabled.
   $sessify = variable_get('esi_harden_cookie_key', TRUE);
   $session_name = $sessify ? session_name() : '';
 
@@ -254,10 +258,10 @@ function esi__get_cookie_data($account) {
   // Allow other modules to generate context for this user.
   $contexts = esi__get_user_contexts($account);
   $params = session_get_cookie_params();
+  $expire = $params['lifetime'] ? REQUEST_TIME + $params['lifetime'] : 0;
   foreach ($contexts as $key => $context) {
     // Each context has the session key appended to it, to ensure site-
     // specifity.
-    $expire = $params['lifetime'] ? REQUEST_TIME + $params['lifetime'] : 0;
     $cookie_data[] = array(
       'name'     => $key,
       'value'    => $context,
@@ -273,16 +277,23 @@ function esi__get_cookie_data($account) {
   // This is where the context gets encrypted against the rotating seed.
   drupal_alter('esi_context_cookies', $cookie_data);
 
+  // Add a *consistent* cookie, so that hook_boot() can determine if a cache-
+  // refresh is necessary.
+  $cookie_data[] = array(
+    'name'     => 'ESI_',
+    'value'    => time(),
+    'expire'   => $expire,
+    'path'     => $params['path'],
+    'domain'   => $params['domain'],
+    'secure'   => $params['secure'],
+    'httponly' => $params['httponly'],
+  );
+
   // The default user-session cookie uses the session_name.
   // Append the session-name to all ESI cookies (if desired).
   $sessify = variable_get('esi_harden_cookie_key', TRUE);
   $session_name = $sessify ? session_name() : '';
-
-  // Add a *consistent* cookie, so that hook_boot() can determine if a cache-
-  // refresh is necessary.
-  $cookie_data['ESI_' . $session_name] = time();
-
-  foreach ($cookie_data as $cookie) {
+  foreach ($cookie_data as &$cookie) {
     $cookie['name'] .= $session_name;
   }
 
