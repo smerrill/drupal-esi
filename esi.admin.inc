@@ -18,3 +18,57 @@ function esi_admin_menu_flush_cache() {
   // page.  Ensure the user is redirected back to a suitable page.
   drupal_goto();
 }
+
+/**
+ * Menu handler to display the configuration form.
+ */
+function esi_admin_configuration_form() {
+  // Global Settings.
+  $form['global'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Global Settings'),
+  );
+
+  $options = array();
+  foreach(esi_get_modes() as $mode_key => $settings) {
+    $options[$mode_key] = t($settings['title']);
+  }
+
+  $form['global']['esi_render_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Render mode'),
+    '#options' => $options,
+    '#default_value' => variable_get('esi_render_mode', ESI_DEFAULT_RENDER_MODE),
+  );
+  $form['global']['esi_default_ttl'] = array(
+    '#type' => 'select',
+    '#title' => t('TTL'),
+    '#description' => t('Default cache-lifespan for ESI fragments'),
+    '#options' => esi_max_age_options(variable_get('esi_default_ttl', ESI_DEFAULT_TTL)),
+    '#default_value' => variable_get('esi_default_ttl', ESI_DEFAULT_TTL),
+  );
+
+  $form['context_cookies'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('User-context cookies'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  
+  $form['context_cookies']['esi_harden_cookie_key'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Harden cookie names'),
+    '#description' => t('Append the session-name (which varies per-site) to the user context-cookies.'),
+    '#default_value' => variable_get('esi_harden_cookie_key', ESI_DEFAULT_CONTEXT_COOKIES_HARDENING),
+  );
+  $form['context_cookies']['esi_seed_key_rotation_interval'] = array(
+    '#type' => 'select',
+    '#title' => t('Seed rotation period'),
+    '#description' => t('The user-context cookies are encrypted against a rotating key, which limits how long an invalidated user can access privileged content.'),
+    '#options' => esi_max_age_options(variable_get('esi_seed_key_rotation_interval', ESI_SEED_ROTATION_INTERVAL)),
+    '#default_value' => variable_get('esi_seed_key_rotation_interval', ESI_SEED_ROTATION_INTERVAL),
+  );
+  // @TODO: Add a 'Rotate seed key' button.
+
+  return system_settings_form($form);
+}

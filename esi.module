@@ -45,8 +45,14 @@
 // Default TTL for all components served by ESI is 5 minutes.
 define('ESI_DEFAULT_TTL', 300);
 
+// Default render mode is to use an ESI tag.
+define('ESI_DEFAULT_RENDER_MODE', 'esi');
+
 // Default interval for rotating the seed key: change each day by default.
 define('ESI_SEED_ROTATION_INTERVAL', 86400);
+
+// By default, user context-cookies are hardened.
+define('ESI_DEFAULT_CONTEXT_COOKIES_HARDENING', TRUE);
 
 /**
  * Implements hook_flush_caches().
@@ -63,7 +69,7 @@ function esi_flush_caches() {
 function esi_element_info() {
   $types['esi'] = array(
     '#url' => '',
-    '#mode' => 'esi',
+    '#mode' => '',
     '#pre_render' => array('esi_prerender_esi_tag'),
     '#theme' => 'esi_tag',
   );
@@ -74,6 +80,10 @@ function esi_element_info() {
  * Prerender handler to load the correct render function for an ESI tag.
  */
 function esi_prerender_esi_tag($element) {
+  if (empty($element['#mode'])) {
+    $element['#mode'] = variable_get('esi_render_mode', ESI_DEFAULT_RENDER_MODE);
+  }
+
   if ($render_function = esi_get_tag_render_function($element['#mode'])) {
     $element['#children'] = $render_function($element['#url']);
     unset($element['#theme']);
@@ -156,6 +166,16 @@ function esi_menu() {
     'access arguments' => array('flush caches'),
     'type' => MENU_CALLBACK,
     'file' => 'esi.admin.inc',
+  );
+
+  $items['admin/config/development/esi'] = array(
+    'title' => 'ESI',
+    'description' => 'Configure the default TTL, type of ESI tag and other ESI settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('esi_admin_configuration_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'esi.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
   );
 
   return $items;
@@ -371,7 +391,7 @@ function esi__get_cookie_data($account) {
 
   // The default user-session cookie uses the session_name.
   // Append the session-name to all ESI cookies (if desired).
-  $sessify = variable_get('esi_harden_cookie_key', TRUE);
+  $sessify = variable_get('esi_harden_cookie_key', ESI_DEFAULT_CONTEXT_COOKIES_HARDENING);
   $session_name = $sessify ? session_name() : '';
   foreach ($cookie_data as &$cookie) {
     $cookie['name'] .= $session_name;
