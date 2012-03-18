@@ -132,6 +132,10 @@ class esi_panels_renderer_esi extends panels_renderer_standard {
    */
   function handle_esi_pane($pane) {
     $url = url(esi_panels_url($pane, $this->display), array('absolute' => TRUE));
-    $this->rendered['panes'][$pane->pid] = '<esi:include src="' . $url . '" />';
+    $render =array(
+      '#type' => 'esi',
+      '#url' => $url,
+    );
+    $this->rendered['panes'][$pane->pid] = drupal_render($render);
   }
 }

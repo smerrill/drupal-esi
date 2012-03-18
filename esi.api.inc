@@ -21,6 +21,8 @@ function hook_esi_component() {
 /**
  * Alter the ESI handlers.
  *
+ * @see hook_esi_component_info().
+ *
  * @param Array $esi_component_info
  * Array of ESI component handlers.
  */
@@ -64,6 +66,8 @@ function hook_esi_context($account) {
 /**
  * Allow other modules to alter the context setting.
  *
+ * @see hook_esi_context().
+ *
  * @param array $contexts
  * Array of context data as provided by hook_esi_context().
  * @param Object $account
@@ -84,4 +88,37 @@ function hook_esi_context_cookies_alter(&$cookie_data) {
   foreach ($cookie_data as &$cookie) {
     $cookie['value'] = str_rot13($cookie['value']);
   }
+}
+
+/**
+ * Provide a method of rendering an ESI URL: for example, as an ESI tag, or an
+ * SSI tag, or a div to render via AJAX.
+ *
+ * @return array(
+ *   'mode_identifier' => array(
+ *     // This title will be translated where used in the UI.
+ *     'title' => 'Human-readable name of this ESI mode.',
+ *     // The render handler receives a single parameter: $url.
+ *     'render' => 'render_function_to_call',
+ *   )
+ * )
+ */
+function hook_esi_mode() {
+  return array(
+    'ssi' => array(
+      'title' => 'SSI tag',
+      'render' => 'mymodule_ssi_tag',
+    ),
+  );
+}
+
+/**
+ * Change the ESI render modes provided by hook_esi_mode().
+ *
+ * @see hook_esi_mode().
+ */
+function hook_esi_mode_alter(&$modes) {
+  // Change the SSI render function to a replacement which changes "<!-- #" to
+  // "<!--#".
+  $modes['ssi']['render'] = 'mymodule_ssi_tag';
 }
