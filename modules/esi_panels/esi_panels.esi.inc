@@ -62,6 +62,7 @@ function esi_panels__restore_context(&$pane) {
   $theme = $pane->esi_meta['theme'];
 
   $_GET['q'] = $pane->esi_meta['url'];
+  $_SERVER['REQUEST_URI'] = $pane->esi_meta['url'];
   drupal_static_reset('drupal_get_destination');
 
   // Load up contexts. Owch.
