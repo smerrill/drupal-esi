@@ -1,0 +1,6 @@
+name = ESI Block test
+description = Provides test blocks to use when testing the ESI Block module.
+package = Testing
+version = VERSION
+core = 7.x
+hidden = TRUE
