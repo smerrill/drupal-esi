@@ -5,3 +5,4 @@ package = Caching
 dependencies[] = block
 dependencies[] = esi
 
+files[] = esi_block.test

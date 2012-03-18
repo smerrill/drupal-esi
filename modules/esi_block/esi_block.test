@@ -1,0 +1,65 @@
+<?php
+/**
+ * @file
+ * Tests for the ESI Block module.
+ */
+
+/**
+ * Test the node_load_multiple() function.
+ */
+class EsiBlockTest extends DrupalWebTestCase {
+
+  protected $admin_user;
+
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Block integration',
+      'description' => 'Test the ESI Block module.',
+      'group' => 'ESI',
+    );
+  }
+
+
+  function setUp() {
+    // Enable block, esi, and esi_block.
+    parent::setUp('block', 'esi', 'esi_block');
+
+    $this->admin_user = $this->drupalCreateUser(array(
+      'administer blocks',
+      'access administration pages',
+    ));
+    $this->drupalLogin($this->admin_user);
+  }
+
+
+
+  /**
+   * Test UI.
+   * The block-admin page should have 'ESI enabled' and 'ESI TTL' fields.
+   */
+  function testAdminBlockConfigureUI() {
+    // Get the block-configuration page for the system:help block.
+    $this->drupalGet('admin/structure/block/manage/system/help/configure');
+    $this->assertField('esi_enabled', t('The ESI-enabled field is displayed.'));
+    $this->assertField('esi_ttl', t('The ESI-TTL field is displayed.'));
+  }
+
+  /**
+   * Test that saving the page will correctly configure the block in the DB.
+   */
+  function testAdminBlockConfigureSubmit() {
+    // Get the block-configuration page for the system:help block.
+    $this->drupalGet('admin/structure/block/manage/system/help/configure');
+    $esi_config = array(
+      'esi_enabled' => 1,
+      'esi_ttl' => 86400,
+    );
+    $this->drupalPost('admin/structure/block/manage/system/help/configure', $esi_config, t('Save block'));
+
+    $esi_settings_in_db = db_query("SELECT esi_enabled, esi_ttl FROM {block} WHERE module = :module AND delta = :delta", array(':module' => 'system', ':delta' => 'help'))->fetchObject();
+    $this->assertEqual($esi_settings_in_db->esi_enabled, TRUE, t('ESI is correctly enabled in the database.'));
+    $this->assertEqual($esi_settings_in_db->esi_ttl, 86400,    t('ESI TTL is correctly set to 350 in the database.'));
+  }
+
+}

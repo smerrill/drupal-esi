@@ -42,7 +42,7 @@ function esi_block_page_alter(&$page) {
   // - Remove the 'block' theme wrapper.
   foreach (element_children($page) as $region_key) {
     foreach (element_children($page[$region_key]) as $block_key) {
-      if (is_object($page[$region_key][$block_key]['#block']) && !empty($page[$region_key][$block_key]['#block']->esi_enabled)) {
+      if (isset($page[$region_key][$block_key]['#block']) && is_object($page[$region_key][$block_key]['#block']) && !empty($page[$region_key][$block_key]['#block']->esi_enabled)) {
         // Remove contextual-links.
         unset($page[$region_key][$block_key]['#contextual_links']);
         // Remove the theme wrapper.
@@ -156,15 +156,31 @@ function esi_block_form_block_admin_configure_alter(&$form, $form_state) {
 function esi_block_block_admin_configure_submit($form, &$form_state) {
   // The regular block-configuration form only saves particular fields. This
   // submit handler stores the ESI-specific data.
+  esi_block__set_esi_settings($form_state['values']['module'], $form_state['values']['delta'], (bool) $form_state['values']['esi_enabled'], (int) $form_state['values']['esi_ttl']);
+}
+
+/**
+ * Configure the ESI settings for a particular block.
+ *
+ * @param String $module
+ * Module implementing the block.
+ * @param String $delta
+ * The block's delta.
+ * @param Boolean $esi_enabled
+ * Set to TRUE if this block should be served by ESI.
+ * @param Int $esi_ttl
+ * Time-to-live: cache lifetime for this block when served by ESI.
+ */
+function esi_block__set_esi_settings($module, $delta, $esi_enabled, $esi_ttl) {
   $transaction = db_transaction();
   try {
     db_update('block')
       ->fields(array(
-        'esi_enabled' => (int) $form_state['values']['esi_enabled'],
-        'esi_ttl'     => (int) $form_state['values']['esi_ttl'],
+        'esi_enabled' => (int) $esi_enabled,
+        'esi_ttl'     => (int) $esi_ttl,
       ))
-      ->condition('module', $form_state['values']['module'])
-      ->condition('delta', $form_state['values']['delta'])
+      ->condition('module', $module)
+      ->condition('delta', $delta)
       ->execute();
   }
   catch (Exception $e) {
