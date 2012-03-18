@@ -1,0 +1,8 @@
+name = ESI - Context integration
+description = "Deliver context-controlled blocks via ESI."
+core = 7.x
+package = Caching
+dependencies[] = context
+dependencies[] = esi
+dependencies[] = esi_block
+
