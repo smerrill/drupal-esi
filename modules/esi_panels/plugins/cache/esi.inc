@@ -4,7 +4,7 @@
  * ESI cache plugin.  Substitutes esi-tags for a panel-pane's content.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t("ESI"),
   'description' => t('ESI caching is a proxy-based cache. Panes are replaced by <esi> tags and requested separately by the proxy.'),
@@ -75,7 +75,6 @@ function esi_panels_esi_cache_get_cache($conf, $display, $args, $contexts, $pane
   // return $cache->data;
 }
 
-
 /**
  * Admin-settings form for configuring the ESI cache on panel panes.
  */
@@ -83,12 +82,11 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
   // drupal_set_message(print_r($display,true));
 
   // Use the TTL from the config if provided, or a suitable default.
-  $esi_ttl = isset($conf['esi_ttl']) ? $conf['esi_ttl'] : (int)variable_get('esi_panels_esi_default_ttl', ESI_DEFAULT_TTL);
+  $esi_ttl = isset($conf['esi_ttl']) ? $conf['esi_ttl'] : (int) variable_get('esi_panels_esi_default_ttl', ESI_DEFAULT_TTL);
 
   $pane = (isset($display->content[$pid])) ? $display->content[$pid] : FALSE;
+
   // Load up the pane information to examine the context.
-
-
   $form['esi_ttl'] = array(
     '#title' => t('Cache Maximum Age (TTL)'),
     '#type' => 'select',
@@ -96,9 +94,6 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     '#default_value' => $esi_ttl,
     '#description' => t('External page caches (proxy/browser) will not deliver cached paged older than this setting; time to live in short.'),
   );
-
-
-
 
   $form['override_context'] = array(
     '#title' => t('Override cache context'),
@@ -108,7 +103,6 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     '#collapsed' => empty($conf['esi_override_context']),
   );
 
-
   // Describe the current panels context: placeholder if there is no context.
   $form['override_context']['pane_context'] = array(
     '#type' => 'item',
@@ -117,6 +111,7 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     '#suffix' => '</div>',
     '#markup' => t("This pane doesn't use panels context."),
   );
+
   // If there is context, add to the placeholder.
   if (!empty($pane->configuration['context'])) {
     // The context is a simple identifier - e.g. "argument_entity_id:node_1".
@@ -126,8 +121,6 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     $context = $display->context[$context_id];
     $form['override_context']['pane_context']['#markup'] = t($context->identifier);
   }
-
-
 
   $form['override_context']['esi_override_context'] = array(
     '#title' => t('Override cache context'),
@@ -150,6 +143,7 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     //   ),
     // ),
   );
+
   $form['override_context']['esi_overridden_context__page'] = array(
     '#title' => t('Cache per page'),
     '#description' => t("The contents of this pane changes depending on the page on which it's displayed."),
@@ -163,6 +157,7 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     //   ),
     // ),
   );
+
   $form['override_context']['esi_overridden_context__user'] = array(
     '#title' => t('User context'),
     '#description' => t("How a user or their roles affect the pane."),
@@ -181,6 +176,6 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     //   ),
     // ),
   );
-  
+
   return $form;
 }
