@@ -79,8 +79,6 @@ function esi_panels_esi_cache_get_cache($conf, $display, $args, $contexts, $pane
  * Admin-settings form for configuring the ESI cache on panel panes.
  */
 function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
-  // drupal_set_message(print_r($display,true));
-
   // Use the TTL from the config if provided, or a suitable default.
   $esi_ttl = isset($conf['esi_ttl']) ? $conf['esi_ttl'] : (int) variable_get('esi_panels_esi_default_ttl', ESI_DEFAULT_TTL);
 
@@ -100,7 +98,7 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     '#type' => 'fieldset',
     '#description' => t('The context requested by the pane (and provided by the parent panel) will be used by default to create separate versions of the pane for each context.'),
     '#collapsible' => TRUE,
-    '#collapsed' => empty($conf['esi_override_context']),
+    '#collapsed' => empty($conf['override_context']['esi_override_context']),
   );
 
   // Describe the current panels context: placeholder if there is no context.
@@ -125,14 +123,14 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
   $form['override_context']['esi_override_context'] = array(
     '#title' => t('Override cache context'),
     '#type' => 'checkbox',
-    '#default_value' => !empty($conf['esi_override_context']),
+    '#default_value' => !empty($conf['override_context']['esi_override_context']),
   );
 
   $form['override_context']['esi_overridden_context__pane_context'] = array(
     '#title' => t('Cache per pane-context'),
     '#description' => t("The contents of this pane changes depending on the pane context provided by the panel."),
     '#type' => 'checkbox',
-    '#default_value' => !empty($conf['esi_overridden_context__pane_context']),
+    '#default_value' => !empty($conf['override_context']['esi_overridden_context__pane_context']),
     // If this pane doesn't provide context, this option isn't applicable.
     '#disabled' => empty($pane->configuration['context']),
 
@@ -148,7 +146,7 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     '#title' => t('Cache per page'),
     '#description' => t("The contents of this pane changes depending on the page on which it's displayed."),
     '#type' => 'checkbox',
-    '#default_value' => !empty($conf['esi_overridden_context__page']),
+    '#default_value' => !empty($conf['override_context']['esi_overridden_context__page']),
 
     // @TODO: use states (once control of radios through states is patched).
     // '#states' => array(
@@ -167,7 +165,7 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
       DRUPAL_CACHE_PER_ROLE => t("Pane changes according to the current user's roles"),
       DRUPAL_CACHE_PER_USER => ('Pane changes according to the current user'),
     ),
-    '#default_value' => isset($conf['esi_overridden_context__user']) ? $conf['esi_overridden_context__user'] : DRUPAL_CACHE_PER_ROLE,
+    '#default_value' => isset($conf['override_context']['esi_overridden_context__user']) ? $conf['override_context']['esi_overridden_context__user'] : DRUPAL_CACHE_PER_ROLE,
 
     // @TODO: use states (once control of radios through states is patched).
     // '#states' => array(
