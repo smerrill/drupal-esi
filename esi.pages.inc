@@ -7,7 +7,7 @@
 /**
  * Menu callback to handle an ESI component.
  *
- * @see esi_component_load().
+ * @see esi_component_load()
  */
 function esi_handle_component($component) {
   // The menu wildcard loader will return NULL for invalid components, so that
@@ -17,13 +17,13 @@ function esi_handle_component($component) {
   }
 
   // Remove the component from the arguments.
-  $args = array_slice(func_get_args(),1);
+  $args = array_slice(func_get_args(), 1);
 
   // Load in the include file if provided.
   if (!empty($component['file'])) {
     $filepath = $component['filepath'] . '/' . $component['file'];
     if (file_exists($filepath)) {
-      include_once($filepath);
+      include_once $filepath;
     }
   }
 
@@ -85,7 +85,7 @@ function esi_fast_404() {
   watchdog('page not found', check_plain($_GET['q']), NULL, WATCHDOG_WARNING);
 
   // Unlike drupal_fast_404(), the HTML furniture (html tag, head tag, etc) are
-  // not delivered 
+  // not delivered.
   echo "<!-- esi_fast_404 -->\n";
 
   // Unlike normal page-views, invoking hook_exit() is unneccessary overhead.

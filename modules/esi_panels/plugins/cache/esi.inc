@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * ESI cache plugin.  Substitutes esi-tags for a panel-pane's content.
@@ -26,53 +27,61 @@ $plugin = array(
  * Set cached content.
  */
 function esi_panels_esi_cache_set_cache($conf, $content, $display, $args, $contexts, $pane = NULL) {
-  // $content will be a panels_cache_object; $content->content is the actual
-  // content.
-  // DO NOTHING!
+  return FALSE;
+
+  $cid = esi_panels_esi_cache_get_id($conf, $display, $args, $contexts, $pane);
+  cache_set($cid, $content);
+  if (!esi_panels_esi_cache_is_esi_request()) {
+    $full_address = esi_panels_esi_cache_get_full_address($display, $pane->pid);
+    esi_panels_esi_cache_render_esi($content, $full_address);
+  }
 }
 
 /**
  * Get cached content.
  */
 function esi_panels_esi_cache_get_cache($conf, $display, $args, $contexts, $pane = NULL) {
-  // If this 'cache get' function returns FALSE, panels will invoke and render
-  // the pane in the normal way.
-  return FALSE;
+  // Output a header on all pages which include an ESI fragment.
+  if (esi_panels_esi_cache_is_esi_request()) {
+    if (drupal_page_is_cacheable()) {
+      drupal_add_http_header('Cache-Control', 'private, max-age=' . $conf['lifetime']);
+    }
+  }
+  else {
+    drupal_add_http_header('X-Panels-ESI', '1');
+  }
 
+  $cid = esi_panels_esi_cache_get_id($conf, $display, $args, $contexts, $pane);
+  $cache = cache_get($cid, 'cache');
+  if (!$cache) {
+    return FALSE;
+  }
 
-  // @TODO: is this necessary now?
-  // // Check that the pane is indeed meant to be served by ESI.
-  // if (empty($pane) || empty($pane->cache['method']) || $pane->cache['method'] != 'esi') {
-  //   return FALSE;
-  // }
-  // 
-  // // Panels expects a cache-handler to return an object similar to the object
-  // // returned by cache_get().  Faking a cached object allows us to return a
-  // // simple ESI tag instead.
-  // 
-  // // Fake the cached object.
-  // $cache = new stdClass;
-  // $cache->data = new panels_cache_object();
-  // $cache->data->content = new stdClass;
-  // $cache->data->head = NULL;
-  // $cache->data->css = array();
-  // $cache->data->js = array();
-  // $cache->data->tokens = array();
-  // $cache->data->ready = TRUE;
-  // 
-  // // Fill in the content with the ESI code
-  // $cache->data->content->content = 'This is my content, tell me yours.';
-  // 
-  // // Add in extras if missing.
-  // if (!isset($cache->data->content->module)) {
-  //   $cache->data->content->module = isset($pane->type) ? $pane->type : 'esi_panels';
-  // }
-  // if (!isset($cache->data->content->delta)) {
-  //   $cache->data->content->delta = isset($pane->subtype) ? $pane->subtype : 'esi';
-  // }
-  // 
-  // // Return the cache object.
-  // return $cache->data;
+  if ((time() - $cache->created) > $conf['lifetime']) {
+    return FALSE;
+  }
+
+  // If this is not a request for the fragment itself, return an ESI tag to be
+  // rendered to the normal output stream.
+  if (!esi_panels_esi_cache_is_esi_request()) {
+    $full_address = esi_panels_esi_cache_get_full_address($display, $pane->pid);
+    esi_panels_esi_cache_render_esi($cache->data, $full_address);
+  }
+  return $cache->data;
+}
+
+/**
+ * Determine whether or not this is an ESI request.
+ */
+function esi_panels_esi_cache_is_esi_request() {
+  return ($GLOBALS['esi_panels_esi_request'] === TRUE);
+}
+
+/**
+ * Given a display and a pid, render a full addressable string.
+ */
+function esi_panels_esi_cache_get_full_address($display, $pid) {
+  return $display->renderer_handler->address . '::' . $pid;
 }
 
 /**
@@ -176,4 +185,53 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
   );
 
   return $form;
+}
+
+/**
+ * Figure out an id for object caching based upon input and settings.
+ */
+function esi_panels_esi_cache_get_id($conf, $display, $args, $contexts, $pane) {
+  $id = 'esi_panels_esi_cache';
+
+  // This is used in case this is an in-code display, which means did will be something like 'new-1'.
+  if (isset($display->owner) && isset($display->owner->id)) {
+    $id .= ':' . $display->owner->id;
+  }
+  $id .= ':' . $display->did;
+
+  if ($pane) {
+    $id .= ':' . $pane->pid;
+  }
+
+  if (user_access('view pane admin links')) {
+    $id .= ':admin';
+  }
+
+  switch ($conf['granularity']) {
+    case 'args':
+      foreach ($args as $arg) {
+        $id .= ':' . $arg;
+      }
+      break;
+
+    case 'context':
+      if (!is_array($contexts)) {
+        $contexts = array($contexts);
+      }
+      foreach ($contexts as $context) {
+        if (isset($context->argument)) {
+          $id .= ':' . $context->argument;
+        }
+      }
+  }
+  if (module_exists('locale')) {
+    global $language;
+    $id .= ':' . $language->language;
+  }
+
+  if(!empty($pane->configuration['use_pager'])) {
+    $id .= ':p' . check_plain($_GET['page']);
+  }
+
+  return $id;
 }

@@ -165,6 +165,10 @@ function esi_panels_url($pane, $display) {
   // Default:                esi/panels_pane/theme:display_id:pane_id
   // With context:           esi/panels_pane/theme:display_id:pane_id/[base64($_GET['q'])]/task_name/context
 
+  // ESI 7 takes advantage of addressable content URLs:
+  // Default:                esi/panels_pane/theme:addressable_url
+  // With context:           esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]/task_name/context
+
   $url = "esi/panels_pane/";
 
   global $theme;
