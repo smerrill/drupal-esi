@@ -1,34 +1,28 @@
 <?php
 /**
+ * @file
  * ESI prepare, render and flush hooks.
  */
-
 
 /**
  * Prepare an ESI panels pane for rendering.
  * Defined in hook_esi_component_info().
  *
- * @see esi_panels_esi_component_info().
+ * @see esi_panels_esi_component_info()
  */
 function esi_panels__esi_pane_prepare($component_key) {
-  // Use the parameters to reconstruct:
-  // - Display
-  // - Pane
-  // - Contexts
-
   // @TODO: Hack hack hacky.
   $GLOBALS['esi_panels_esi_request'] = TRUE;
 
   // If the component key contains "::", it has addressable content in it.
-  if (strpos($component_key, "::") !== 0) {
+  if (strpos($component_key, "::") === FALSE) {
+    return FALSE;
+  }
+  else {
     $matches = array();
     if (preg_match("/(.*?):(.*)/", $component_key, $matches)) {
       list($component_key, $theme, $address) = $matches;
     }
-  }
-  else {
-    // @TODO: Restore old-school pane-display logic for the time being.
-    // list($theme, $pane, $display) = etc, etc.
   }
 
   $args = array_slice(func_get_args(), 1);
@@ -42,6 +36,12 @@ function esi_panels__esi_pane_prepare($component_key) {
     'theme' => $theme,
     'url' => base64_decode($url),
   );
+
+  // Allow other modules to alter the context information here.
+  // A certain implementation might adjust the addressable string to add extra
+  // args or do something similar.
+  // @see hook_esi_block_context_alter()
+  drupal_alter('esi_panels_pane_context', $pane);
 
   esi_panels__restore_context($pane);
 
@@ -68,15 +68,10 @@ function esi_panels__restore_context(&$pane) {
  * @see esi_panels_esi_component_info()
  */
 function esi_panels__esi_pane_render($pane) {
-  // Much of this is from the "standard" display renderer:
-  // see panels_renderer_standard::prepare().
-
+  // Use addressable content exclusively.
   if ($address = $pane->esi_meta['address']) {
     ctools_include('content');
     $content = ctools_get_addressable_content($address);
-  }
-  else {
-    // @TODO: Put the old way of figuring things back in here?
   }
 
   // CTools will return an empty string if any of a number of errors occur.
@@ -100,7 +95,7 @@ function esi_panels_set_http_headers($pane) {
   // @see hook_esi_block_cache_headers_alter().
   drupal_alter('esi_panels_cache_headers', $headers);
 
-  foreach($headers as $header) {
+  foreach ($headers as $header) {
     drupal_add_http_header($header[0], $header[1]);
   }
 }
@@ -113,5 +108,4 @@ function esi_panels_set_http_headers($pane) {
  */
 function esi_panels__esi_pane_flush() {
   // @TODO.
-
 }
