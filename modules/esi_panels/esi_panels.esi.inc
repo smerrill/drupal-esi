@@ -59,6 +59,13 @@ function esi_panels__restore_context(&$pane) {
   $_GET['q'] = $pane->esi_meta['url'];
   $_SERVER['REQUEST_URI'] = $pane->esi_meta['url'];
   drupal_static_reset('drupal_get_destination');
+
+  // Load the actual pane info through the addressable content system.
+  $pane_meta = $pane->esi_meta;
+  ctools_include('content');
+  if ($pane = ctools_get_addressable_content($pane_meta['address'], 'pane')) {
+    $pane->esi_meta = $pane_meta;
+  }
 }
 
 /**
@@ -68,6 +75,9 @@ function esi_panels__restore_context(&$pane) {
  * @see esi_panels_esi_component_info()
  */
 function esi_panels__esi_pane_render($pane) {
+  // Set HTTP headers.
+  esi_panels_set_http_headers($pane);
+
   // Use addressable content exclusively.
   if ($address = $pane->esi_meta['address']) {
     ctools_include('content');
