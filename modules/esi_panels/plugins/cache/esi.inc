@@ -41,6 +41,8 @@ function esi_panels_esi_cache_set_cache($conf, $content, $display, $args, $conte
  * Get cached content.
  */
 function esi_panels_esi_cache_get_cache($conf, $display, $args, $contexts, $pane = NULL) {
+  return FALSE;
+
   // Output a header on all pages which include an ESI fragment.
   if (esi_panels_esi_cache_is_esi_request()) {
     if (drupal_page_is_cacheable()) {

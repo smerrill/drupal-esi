@@ -7,7 +7,6 @@
  * they're bundled together into regions.
  */
 class esi_panels_renderer_esi extends panels_renderer_standard {
-  
   /**
    * Prepare the list of panes to be rendered, accounting for visibility/access
    * settings and rendering order.
@@ -132,7 +131,7 @@ class esi_panels_renderer_esi extends panels_renderer_standard {
    */
   function handle_esi_pane($pane) {
     $url = url(esi_panels_url($pane, $this->display), array('absolute' => TRUE));
-    $render =array(
+    $render = array(
       '#type' => 'esi',
       '#url' => $url,
     );

@@ -165,38 +165,46 @@ function esi_panels_url($pane, $display) {
   // Default:                esi/panels_pane/theme:display_id:pane_id
   // With context:           esi/panels_pane/theme:display_id:pane_id/[base64($_GET['q'])]/task_name/context
 
-  // ESI 7 takes advantage of addressable content URLs:
+  // ESI 7 takes advantage of addressable content URLs if they are available.
   // Default:                esi/panels_pane/theme:addressable_url
   // With context:           esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]/task_name/context
 
-  $url = "esi/panels_pane/";
-
   global $theme;
-  $url .= implode(':', array(
-    $theme,
-    $pane->did,
-    $pane->pid,
-  ));
+  $url = "esi/panels_pane/" . $theme . ":";
 
-  // The did and pid are used to identify which pane content_type to load.
-
-  // Other available data to pass into the URL:
-  // - $display->args       Are *always* passed.
-  // - $display->context    A pane can only accept a single context.
-  // - $display->cache_key  The cache key provides the name of the task/subtask.
-
-  if (!empty($pane->configuration['context'])) {
-    // If the context originates from the *TASK* plugin (which is typical), the
-    // task name is required in order to generate the task contexts
-    // ($base_context in panels_panel_context_render()).
-    // Additional contexts may be supplied directly by the display.
-    $task_name = _esi_panels__get_taskname($display->cache_key);
-
-    $url .= "/{$task_name}";
+  // If the display reports that it has addressable content, make use of that.
+  if ($display->renderer_handler && $address = $display->renderer_handler->address) {
+    $url .= implode('::', array(
+      $address,
+      $pane->pid,
+    ));
   }
+  else {
+    $url .= implode(':', array(
+      $pane->did,
+      $pane->pid,
+    ));
 
-  // Add all the display arguments to the end of the URL.
-  $url .= '/' . implode('/', $display->args);
+    // The did and pid are used to identify which pane content_type to load.
+
+    // Other available data to pass into the URL:
+    // - $display->args       Are *always* passed.
+    // - $display->context    A pane can only accept a single context.
+    // - $display->cache_key  The cache key provides the name of the task/subtask.
+
+    if (!empty($pane->configuration['context'])) {
+      // If the context originates from the *TASK* plugin (which is typical), the
+      // task name is required in order to generate the task contexts
+      // ($base_context in panels_panel_context_render()).
+      // Additional contexts may be supplied directly by the display.
+      $task_name = _esi_panels__get_taskname($display->cache_key);
+
+      $url .= "/{$task_name}";
+    }
+
+    // Add all the display arguments to the end of the URL.
+    $url .= '/' . implode('/', $display->args);
+  }
 
   // Always add the current page URL.
   $url .= '/' . base64_encode($_GET['q']);

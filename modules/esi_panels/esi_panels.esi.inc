@@ -19,10 +19,19 @@ function esi_panels__esi_pane_prepare($component_key) {
   // @TODO: Hack hack hacky.
   $GLOBALS['esi_panels_esi_request'] = TRUE;
 
-  $theme = $component_key;
+  // If the component key contains "::", it has addressable content in it.
+  if (strpos($component_key, "::") !== 0) {
+    $matches = array();
+    if (preg_match("/(.*?):(.*)/", $component_key, $matches)) {
+      list($component_key, $theme, $address) = $matches;
+    }
+  }
+  else {
+    // @TODO: Restore old-school pane-display logic for the time being.
+    // list($theme, $pane, $display) = etc, etc.
+  }
+
   $args = array_slice(func_get_args(), 1);
-  // Grab the address from the args. (This will include extra args!)
-  $address = array_pop($args);
 
   // Grab additional info if it is needed.
   $url = array_pop($args);
@@ -61,8 +70,14 @@ function esi_panels__restore_context(&$pane) {
 function esi_panels__esi_pane_render($pane) {
   // Much of this is from the "standard" display renderer:
   // see panels_renderer_standard::prepare().
-  ctools_include('content');
-  $content = ctools_get_addressable_content($pane->address);
+
+  if ($address = $pane->esi_meta['address']) {
+    ctools_include('content');
+    $content = ctools_get_addressable_content($address);
+  }
+  else {
+    // @TODO: Put the old way of figuring things back in here?
+  }
 
   // CTools will return an empty string if any of a number of errors occur.
   if (empty($content)) {
