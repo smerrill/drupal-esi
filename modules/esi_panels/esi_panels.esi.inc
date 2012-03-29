@@ -11,9 +11,6 @@
  * @see esi_panels_esi_component_info()
  */
 function esi_panels__esi_pane_prepare($component_key) {
-  // @TODO: Hack hack hacky.
-  $GLOBALS['esi_panels_esi_request'] = TRUE;
-
   // If the component key contains "::", it has addressable content in it.
   if (strpos($component_key, "::") === FALSE) {
     return FALSE;

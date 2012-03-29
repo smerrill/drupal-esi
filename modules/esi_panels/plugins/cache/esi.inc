@@ -27,63 +27,32 @@ $plugin = array(
  * Set cached content.
  */
 function esi_panels_esi_cache_set_cache($conf, $content, $display, $args, $contexts, $pane = NULL) {
-  return FALSE;
+  if (!$conf['use_object_cache']) {
+    return FALSE;
+  }
 
   $cid = esi_panels_esi_cache_get_id($conf, $display, $args, $contexts, $pane);
   cache_set($cid, $content);
-  if (!esi_panels_esi_cache_is_esi_request()) {
-    $full_address = esi_panels_esi_cache_get_full_address($display, $pane->pid);
-    esi_panels_esi_cache_render_esi($content, $full_address);
-  }
 }
 
 /**
  * Get cached content.
  */
 function esi_panels_esi_cache_get_cache($conf, $display, $args, $contexts, $pane = NULL) {
-  return FALSE;
-
-  // Output a header on all pages which include an ESI fragment.
-  if (esi_panels_esi_cache_is_esi_request()) {
-    if (drupal_page_is_cacheable()) {
-      drupal_add_http_header('Cache-Control', 'private, max-age=' . $conf['lifetime']);
-    }
+  if (!$conf['use_object_cache']) {
+    return FALSE;
   }
-  else {
-    drupal_add_http_header('X-Panels-ESI', '1');
-  }
-
   $cid = esi_panels_esi_cache_get_id($conf, $display, $args, $contexts, $pane);
   $cache = cache_get($cid, 'cache');
   if (!$cache) {
     return FALSE;
   }
 
-  if ((time() - $cache->created) > $conf['lifetime']) {
+  if ((time() - $cache->created) > $conf['esi_ttl']) {
     return FALSE;
   }
 
-  // If this is not a request for the fragment itself, return an ESI tag to be
-  // rendered to the normal output stream.
-  if (!esi_panels_esi_cache_is_esi_request()) {
-    $full_address = esi_panels_esi_cache_get_full_address($display, $pane->pid);
-    esi_panels_esi_cache_render_esi($cache->data, $full_address);
-  }
   return $cache->data;
-}
-
-/**
- * Determine whether or not this is an ESI request.
- */
-function esi_panels_esi_cache_is_esi_request() {
-  return ($GLOBALS['esi_panels_esi_request'] === TRUE);
-}
-
-/**
- * Given a display and a pid, render a full addressable string.
- */
-function esi_panels_esi_cache_get_full_address($display, $pid) {
-  return $display->renderer_handler->address . '::' . $pid;
 }
 
 /**
@@ -97,11 +66,19 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
 
   // Load up the pane information to examine the context.
   $form['esi_ttl'] = array(
-    '#title' => t('Cache Maximum Age (TTL)'),
+    '#title' => t('Cache maximum age (TTL)'),
     '#type' => 'select',
     '#options' => esi_max_age_options($esi_ttl),
     '#default_value' => $esi_ttl,
     '#description' => t('External page caches (proxy/browser) will not deliver cached paged older than this setting; time to live in short.'),
+  );
+
+  // Load up the pane information to examine the context.
+  $form['use_object_cache'] = array(
+    '#title' => t('Use object caching'),
+    '#type' => 'checkbox',
+    '#default_value' => !empty($conf['use_object_cache']),
+    '#description' => t('Also use object caching for the content of ESI panes. (Be careful - this may cause cache coherency problems.)'),
   );
 
   $form['override_context'] = array(
@@ -209,6 +186,7 @@ function esi_panels_esi_cache_get_id($conf, $display, $args, $contexts, $pane) {
     $id .= ':admin';
   }
 
+  // @TODO: Fix this to align with how ESI.module works.
   switch ($conf['granularity']) {
     case 'args':
       foreach ($args as $arg) {
@@ -231,7 +209,7 @@ function esi_panels_esi_cache_get_id($conf, $display, $args, $contexts, $pane) {
     $id .= ':' . $language->language;
   }
 
-  if(!empty($pane->configuration['use_pager'])) {
+  if (!empty($pane->configuration['use_pager'])) {
     $id .= ':p' . check_plain($_GET['page']);
   }
 
