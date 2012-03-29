@@ -10,6 +10,12 @@
  * @see esi_component_load()
  */
 function esi_handle_component($component) {
+  // Anyone running ESI should have object caching disabled for the page cache.
+  // Disable it just in case. This is especially important since $_GET['q']
+  // gets set synthetically in COMPONENT__restore_context(), and it would be
+  // very easy to end up with an ESI fragment in the cache for "/node/1".
+  drupal_page_is_cacheable(FALSE);
+
   // The menu wildcard loader will return NULL for invalid components, so that
   // the menu-handler will delegate 404 delivery here.
   if (empty($component)) {
