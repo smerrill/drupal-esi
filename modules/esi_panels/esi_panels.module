@@ -204,35 +204,6 @@ function esi_panels__panel_context_save(&$handler, $update) {
 }
 
 /**
- * Load the arguments which are used to populate the base context of a ctools
- * task plugin.
- *
- * @example
- * $args = esi_panels__get_base_context_arguments('node_view', array(1));
- * Returns array(node_load(1));
- *
- * @param String $task
- * The ctools task.
- * @param String $subtask
- * The subtask of the ctools task (if applicable).
- * @param Array $args
- * Arguments to pass to the argument constructor (if applicable).
- *
- * @return Array
- * Array of arguments to pass to the ctools context constructor.
- */
-function esi_panels__get_base_context_arguments($task, $subtask = '', $args = array()) {
-  // A core bug is preventing module_invoke_all() from lazy-loading according
-  // to the hook_hook_info() definitions.
-  foreach (module_list(FALSE, FALSE, TRUE) as $module) {
-    module_load_include('inc', $module, $module . '.esi_panels');
-  }
-
-  return module_invoke_all('esi_panels_context_arguments', $task, $subtask, $args);
-}
-
-
-/**
  * Check if any panes are configured to use ESI.
  *
  * @param Object $display
@@ -250,41 +221,4 @@ function _esi_panels__display_uses_esi(panels_display $display) {
   }
 
   return FALSE;
-}
-
-/**
- * Reverse the $display->cache_key encoding to get the task name.
- *
- * @param String $cache_key
- * The cache key used on a display.
- *
- * @return String
- * The task name of the task handler.
- */
-function _esi_panels__get_taskname($cache_key) {
-  // $display->cache_key = 'panel_context:' . $task_name . ':' . $handler->name;
-  if (preg_match('/^panel_context:([^:]+):.*$/', $cache_key, $matches)) {
-    return $matches[1];
-  }
-}
-
-/**
- * Reverse the $display->cache_key encoding to get the task name (and sub-task
- * if used).
- *
- * @param String $task_name
- * The task key, as used by a display cache_key.
- *
- * @return Array
- * - 0 => Name of the task.
- * - 1 => Name of the subtask (or '' if not set).
- */
-function _esi_panels__get_task_identifier($task_name) {
-  if (strpos('-', $task_name)) {
-    list ($task, $subtask) = explode('-', $task_name, 2);
-    return array($task, $subtask);
-  }
-  else {
-    return array($task_name, '');
-  }
 }
