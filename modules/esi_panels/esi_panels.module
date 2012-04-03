@@ -87,7 +87,7 @@ function esi_panels_form_panels_panel_context_edit_settings_alter(&$form, &$form
 }
 
 /**
- * Implementation of hook_ctools_plugin_directory().
+ * Implements hook_ctools_plugin_directory().
  */
 function esi_panels_ctools_plugin_directory($module, $plugin) {
   // Safety: go away if CTools is not at an appropriate version.
@@ -99,7 +99,7 @@ function esi_panels_ctools_plugin_directory($module, $plugin) {
   // errors when they're in use.
   if ($module == 'ctools' && $plugin == 'cache') {
     return;
-    // if we did we'd make a plugin/ctools_cache or something.
+    // If we did we'd make a plugin/ctools_cache or something.
   }
 
   if ($module == 'page_manager' || $module == 'panels' || $module == 'ctools') {
@@ -121,7 +121,7 @@ function esi_panels_ctools_plugin_type() {
 }
 
 /**
- * Implementation of hook_ctools_plugin_api().
+ * Implements hook_ctools_plugin_api().
  *
  * Inform CTools about version information for various plugins implemented by
  * Panels.
@@ -157,15 +157,14 @@ function esi_panels_ctools_plugin_post_alter(&$plugin, &$info) {
 /**
  * Build the URL to use for this ESI component.
  *
- * @return String
- * The internal URL. Generate a fully-qualified path by running through url().
+ * @return string
+ *   The internal URL. Generate a fully-qualified path by running through url().
  */
 function esi_panels_url($pane, $display) {
   // ESI 7 takes advantage of addressable content URLs.
   // Addressable content URLs contain context and args.
-  // Default:         esi/panels_pane/theme:addressable_url:pid
-  // Cached per page: esi/panels_pane/theme:addressable_url:pid/[base64($_GET['q'])]
-
+  // Default:         esi/panels_pane/theme:addressable_url
+  // Cached per page: esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]
   global $theme;
   $url = "esi/panels_pane/" . $theme . ":";
 
@@ -189,7 +188,7 @@ function esi_panels_url($pane, $display) {
 
 /**
  * Save the configuration of a panel page.
- * @see panels_panel_context_save().
+ * @see panels_panel_context_save()
  */
 function esi_panels__panel_context_save(&$handler, $update) {
   // Override the rendering pipeline if any pane uses ESI.
@@ -206,10 +205,11 @@ function esi_panels__panel_context_save(&$handler, $update) {
 /**
  * Check if any panes are configured to use ESI.
  *
- * @param Object $display
- * A panels_display object.
+ * @param ibject $display
+ *   A panels_display object.
  *
- * @return Boolean
+ * @return boolean
+ *   Whether any panes use the ESI cache.
  */
 function _esi_panels__display_uses_esi(panels_display $display) {
   // Iterate each pane.
