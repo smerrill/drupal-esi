@@ -161,13 +161,10 @@ function esi_panels_ctools_plugin_post_alter(&$plugin, &$info) {
  * The internal URL. Generate a fully-qualified path by running through url().
  */
 function esi_panels_url($pane, $display) {
-  // ESI 6.x-1.x and 6.x-2.x used the URL patterns:
-  // Default:                esi/panels_pane/theme:display_id:pane_id
-  // With context:           esi/panels_pane/theme:display_id:pane_id/[base64($_GET['q'])]/task_name/context
-
-  // ESI 7 takes advantage of addressable content URLs if they are available.
-  // Default:                esi/panels_pane/theme:addressable_url
-  // With context:           esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]/task_name/context
+  // ESI 7 takes advantage of addressable content URLs.
+  // Addressable content URLs contain context and args.
+  // Default:         esi/panels_pane/theme:addressable_url
+  // Cached per page: esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]
 
   global $theme;
   $url = "esi/panels_pane/" . $theme . ":";
