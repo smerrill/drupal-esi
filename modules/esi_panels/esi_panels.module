@@ -215,7 +215,8 @@ function _esi_panels__display_uses_esi(panels_display $display) {
   // Iterate each pane.
   foreach ($display->content as $pid => $pane) {
     // Any single pane implementing ESI is enough to return TRUE.
-    if (!empty($pane->cache) && $pane->cache['method'] == 'esi') {
+    // Allow other cache plugins whose names start with "esi".
+    if (!empty($pane->cache) && strpos($pane->cache['method'], 'esi') === 0) {
       return TRUE;
     }
   }
