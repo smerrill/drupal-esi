@@ -114,22 +114,6 @@ function esi_panels_esi_cache_settings_form($conf, $display, $pid) {
     '#default_value' => !empty($conf['override_context']['esi_override_context']),
   );
 
-  $form['override_context']['esi_overridden_context__pane_context'] = array(
-    '#title' => t('Cache per pane-context'),
-    '#description' => t("The contents of this pane changes depending on the pane context provided by the panel."),
-    '#type' => 'checkbox',
-    '#default_value' => !empty($conf['override_context']['esi_overridden_context__pane_context']),
-    // If this pane doesn't provide context, this option isn't applicable.
-    '#disabled' => empty($pane->configuration['context']),
-
-    // @TODO: use states (once control of radios through states is patched).
-    // '#states' => array(
-    //   'disabled' => array(   // override_context to take.
-    //     ':input[name="settings[override_context][esi_override_context]"]' => array('unchecked' => TRUE),
-    //   ),
-    // ),
-  );
-
   $form['override_context']['esi_overridden_context__page'] = array(
     '#title' => t('Cache per page'),
     '#description' => t("The contents of this pane changes depending on the page on which it's displayed."),
