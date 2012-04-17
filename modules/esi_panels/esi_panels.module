@@ -163,8 +163,12 @@ function esi_panels_ctools_plugin_post_alter(&$plugin, &$info) {
 function esi_panels_url($pane, $display) {
   // ESI 7 takes advantage of addressable content URLs.
   // Addressable content URLs contain context and args.
-  // Default:         esi/panels_pane/theme:addressable_url
-  // Cached per page: esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]
+  // Default:              esi/panels_pane/theme:addressable_url
+  // Cache per-role:       esi/panels_pane/theme:addressable_url/CACHE=ROLE
+  // Cache per-user:       esi/panels_pane/theme:addressable_url/CACHE=USER
+  // Cache per-page:       esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]
+  // Cache per-role-page:  esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]/CACHE=ROLE
+  // Cache per-user-page:  esi/panels_pane/theme:addressable_url/[base64($_GET['q'])]/CACHE=ROLE
   global $theme;
   $url = "esi/panels_pane/" . $theme . ":";
 
@@ -176,8 +180,18 @@ function esi_panels_url($pane, $display) {
     ));
   }
 
-  // Always add the current page URL.
-  $url .= '/' . base64_encode($_GET['q']);
+  if ($pane->cache['settings']['override_context']['esi_overridden_context__page']) {
+    $url .= '/' . base64_encode($_GET['q']);
+  }
+
+  switch ($pane->cache['settings']['override_context']['esi_overridden_context__user']) {
+    case 1:
+      $url .= '/CACHE=ROLE';
+      break;
+    case 2:
+      $url .= '/CACHE=USER';
+      break;
+  }
 
   // Allow other modules to alter the ESI URL (or respond to it).
   // @see hook_esi_block_url_alter().
