@@ -219,7 +219,7 @@ function esi_panels__panel_context_save(&$handler, $update) {
 /**
  * Check if any panes are configured to use ESI.
  *
- * @param ibject $display
+ * @param object $display
  *   A panels_display object.
  *
  * @return boolean

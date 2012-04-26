@@ -108,7 +108,7 @@ function esi_panels_set_http_headers($pane) {
 }
 
 /**
- * Flush the ESI block caches.
+ * Flush the ESI pane caches.
  * Defined in hook_esi_component_info().
  *
  * @see esi_panels_esi_component_info()
