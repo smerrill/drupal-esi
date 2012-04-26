@@ -77,7 +77,7 @@ class esi_panels_renderer_esi extends panels_renderer_standard {
     if (!$pane->shown) {
       return FALSE;
     }
-    elseif (!empty($pane->cache) && $pane->cache['method'] == 'esi') {
+    elseif (!empty($pane->cache) && strpos($pane->cache['method'], 'esi') === 0) {
       // ESI panes are always rendered (access callbacks)
       return TRUE;
     }
@@ -120,7 +120,7 @@ class esi_panels_renderer_esi extends panels_renderer_standard {
    */
   function handle_esi() {
     foreach ($this->prepared['panes'] as $pid => $pane) {
-      if (!empty($pane->cache) && $pane->cache['method'] == 'esi') {
+      if (!empty($pane->cache) && strpos($pane->cache['method'], 'esi') === 0) {
         $this->handle_esi_pane($pane);
       }
     }
