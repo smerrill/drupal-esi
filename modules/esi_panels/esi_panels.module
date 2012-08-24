@@ -74,19 +74,6 @@ function esi_panels_esi_component_info() {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
- */
-function esi_panels_form_panels_panel_context_edit_settings_alter(&$form, &$form_state) {
-  // The 'ESI' panels renderer should automatically replace the 'standard'
-  // panels renderer when there are panes on a panel which are handled by ESI.
-  // It should not be selectable in its own right.
-  unset($form['conf']['pipeline']['#options']['esi']);
-  if ($form['conf']['pipeline']['#default_value'] == 'esi') {
-    $form['conf']['pipeline']['#default_value'] = 'standard';
-  }
-}
-
-/**
  * Implements hook_ctools_plugin_directory().
  */
 function esi_panels_ctools_plugin_directory($module, $plugin) {
@@ -105,19 +92,6 @@ function esi_panels_ctools_plugin_directory($module, $plugin) {
   if ($module == 'page_manager' || $module == 'panels' || $module == 'ctools') {
     return 'plugins/' . $plugin;
   }
-}
-
-/**
- * Implements hook_ctools_plugin_type().
- *
- * Register display_renderer plugin types.
- */
-function esi_panels_ctools_plugin_type() {
-  return array(
-    'display_renderers' => array(
-      'classes' => array('renderer'),
-    ),
-  );
 }
 
 /**
