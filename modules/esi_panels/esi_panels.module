@@ -95,40 +95,6 @@ function esi_panels_ctools_plugin_directory($module, $plugin) {
 }
 
 /**
- * Implements hook_ctools_plugin_api().
- *
- * Inform CTools about version information for various plugins implemented by
- * Panels.
- *
- * @param string $owner
- *   The system name of the module owning the API about which information is
- *   being requested.
- * @param string $api
- *   The name of the API about which information is being requested.
- */
-function esi_panels_ctools_plugin_api($owner, $api) {
-  if ($owner == 'panels' && $api == 'pipelines') {
-    return array(
-      'version' => 1,
-    );
-  }
-}
-
-/**
- * Implements hook_ctools_plugin_post_alter().
- */
-function esi_panels_ctools_plugin_post_alter(&$plugin, &$info) {
-  // Every time the configuration of a panel is saved, the default hook on the
-  // panel-context is invoked.  Replace that hook, in order to check for the
-  // presence of ESI panes, and switch the rendering pipeline if necessary.
-  if ($plugin['name'] == 'panel_context') {
-    // Replace the default 'save' operation - panels_panel_context_save();
-    $plugin['save'] = 'esi_panels__panel_context_save';
-  }
-}
-
-
-/**
  * Build the URL to use for this ESI component.
  *
  * @return string
@@ -172,22 +138,6 @@ function esi_panels_url($pane, $display) {
   drupal_alter('esi_panels_url', $url);
 
   return $url;
-}
-
-/**
- * Save the configuration of a panel page.
- * @see panels_panel_context_save()
- */
-function esi_panels__panel_context_save(&$handler, $update) {
-  // Override the rendering pipeline if any pane uses ESI.
-  // Only the standard rendering pipeline is supported; alternative/IPE/legacy
-  // pipelines cannot be used with ESI.
-  // @TODO: inform the user of this on the display, if a non-standard renderer
-  // is selected.
-  if ($handler->conf['pipeline'] == 'standard' && _esi_panels__display_uses_esi($handler->conf['display'])) {
-    $handler->conf['pipeline'] = 'esi';
-  }
-  panels_panel_context_save($handler, $update);
 }
 
 /**
