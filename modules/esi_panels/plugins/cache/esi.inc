@@ -39,6 +39,23 @@ function esi_panels_esi_cache_set_cache($conf, $content, $display, $args, $conte
  * Get cached content.
  */
 function esi_panels_esi_cache_get_cache($conf, $display, $args, $contexts, $pane = NULL) {
+  // @TODO: Perhaps truncate the css and head properties?
+  // Output the ESI tag if we have not been explicitly request to render full
+  // content.
+  if (!isset($contexts['esi:render']) || $contexts['esi:render_full'] !== TRUE) {
+    // Make a synthetic Panels cache object and put in an ESI tag as the
+    // content.
+    $cache = new panels_cache_object();
+    $cache->content = new stdClass();
+
+    $url = url(esi_panels_url($pane, $display), array('absolute' => TRUE));
+    $cache->content->content = array(
+      '#type' => 'esi',
+      '#url' => $url,
+    );
+    return $cache;
+  }
+
   if (!$conf['use_object_cache']) {
     return FALSE;
   }

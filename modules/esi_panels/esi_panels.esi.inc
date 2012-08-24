@@ -78,7 +78,9 @@ function esi_panels__esi_pane_render($pane) {
   // Use addressable content exclusively.
   if ($address = $pane->esi_meta['address']) {
     ctools_include('content');
-    $content = ctools_get_addressable_content($address);
+    $content = ctools_get_addressable_content($address, 'content', array(
+      'esi:render_full' => TRUE,
+    ));
   }
 
   // CTools will return an empty string if any of a number of errors occur.
